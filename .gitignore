@@ -1,2 +1,5 @@
 .idea
 unet/
+*.hdf5
+Data/
+Data2/

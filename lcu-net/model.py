@@ -19,14 +19,16 @@ def __apply_conv3x3(input_tensor, filter_size: int):
                      kernel_size=(3, 1),
                      strides=(1, 1),
                      padding='same',
-                     activation='relu')(input_tensor)
-    conv3x1 = BatchNormalization()(conv3x1)
+                     activation='relu',
+                     kernel_initializer='he_normal')(input_tensor)
+    # conv3x1 = BatchNormalization()(conv3x1)
 
     conv1x3 = Conv2D(filters=filter_size,
                      kernel_size=(1, 3),
                      strides=(1, 1),
                      padding='same',
-                     activation='relu')(conv3x1)
+                     activation='relu',
+                     kernel_initializer='he_normal')(conv3x1)
     conv1x3 = BatchNormalization()(conv1x3)
 
     return conv1x3
@@ -35,7 +37,7 @@ def __apply_conv3x3(input_tensor, filter_size: int):
 block_num = 1
 
 
-def __encoder_decoder_block(input_tensor, filter_size: int, encoder: bool, concat_block=None, dropout=0.5,
+def __encoder_decoder_block(input_tensor, filter_size: int, encoder: bool, concat_block=None, dropout=0.0,
                             maxpool: bool = True, debug: bool = False):
 
     global block_num
@@ -48,7 +50,8 @@ def __encoder_decoder_block(input_tensor, filter_size: int, encoder: bool, conca
         up_sampled = Conv2DTranspose(filters=filter_size,
                                      kernel_size=(2, 2),
                                      strides=(2, 2),
-                                     padding='same')(input_tensor)
+                                     padding='same',
+                                     kernel_initializer='he_normal')(input_tensor)
 
         assert concat_block is not None
 
@@ -63,7 +66,11 @@ def __encoder_decoder_block(input_tensor, filter_size: int, encoder: bool, conca
 
         input_tensor = merged
 
-    conv1 = Conv2D(filters=filter_size, kernel_size=(1, 1), strides=(1, 1), padding='same')(input_tensor)
+    conv1 = Conv2D(filters=filter_size,
+                   kernel_size=(1, 1),
+                   strides=(1, 1),
+                   padding='same',
+                   kernel_initializer='he_normal')(input_tensor)
     conv1 = BatchNormalization()(conv1)
 
     conv3 = __apply_conv3x3(input_tensor, filter_size)
@@ -76,7 +83,7 @@ def __encoder_decoder_block(input_tensor, filter_size: int, encoder: bool, conca
 
     block = merged
 
-    if dropout > 0 and encoder:
+    if dropout > 0.0 and encoder:
         merged = Dropout(dropout)(merged)
     if maxpool and encoder:
         merged = MaxPooling2D(pool_size=(2, 2))(merged)
@@ -90,37 +97,41 @@ def __encoder_decoder_block(input_tensor, filter_size: int, encoder: bool, conca
     return block, down_sampled
 
 
-def LCU_Net(input_shape=(256, 256, 3), debug: bool = False):
+def LCU_Net(input_shape=(256, 256, 3), output_shape=(256, 256, 1), debug: bool = False):
+
+    dropout = 0.5
+
     input_tensor = Input(input_shape)
+    input_tensor = BatchNormalization()(input_tensor)
 
     block1, down_sampled1 = __encoder_decoder_block(input_tensor=input_tensor,
                                                     filter_size=16,
                                                     encoder=True,
-                                                    dropout=0.8,
+                                                    dropout=dropout,
                                                     maxpool=True,
                                                     debug=debug)
     block2, down_sampled2 = __encoder_decoder_block(input_tensor=down_sampled1,
                                                     filter_size=32,
                                                     encoder=True,
-                                                    dropout=0.8,
+                                                    dropout=dropout,
                                                     maxpool=True,
                                                     debug=debug)
     block3, down_sampled3 = __encoder_decoder_block(input_tensor=down_sampled2,
                                                     filter_size=64,
                                                     encoder=True,
-                                                    dropout=0.8,
+                                                    dropout=dropout,
                                                     maxpool=True,
                                                     debug=debug)
     block4, down_sampled4 = __encoder_decoder_block(input_tensor=down_sampled3,
                                                     filter_size=128,
                                                     encoder=True,
-                                                    dropout=0.8,
+                                                    dropout=dropout,
                                                     maxpool=True,
                                                     debug=debug)
     block5, down_sampled5 = __encoder_decoder_block(input_tensor=down_sampled4,
                                                     filter_size=256,
                                                     encoder=True,
-                                                    dropout=0.8,
+                                                    dropout=dropout,
                                                     maxpool=True,
                                                     debug=debug)
 
@@ -145,18 +156,43 @@ def LCU_Net(input_shape=(256, 256, 3), debug: bool = False):
                                         concat_block=block1,
                                         debug=debug)
 
-    filters = input_shape[2] if len(input_shape) == 3 else 1
-    output_block = Conv2D(filters=filters, kernel_size=1, strides=1, padding='same', activation='sigmoid')(block9)
+    block10 = Conv2D(filters=16,
+                     kernel_size=(3, 1),
+                     strides=(1, 1),
+                     padding='same',
+                     activation='relu',
+                     kernel_initializer='he_normal')(block9)
+    block10 = Conv2D(filters=16,
+                     kernel_size=(1, 3),
+                     strides=(1, 1),
+                     padding='same',
+                     activation='relu',
+                     kernel_initializer='he_normal')(block10)
+
+    filters = output_shape[2] if len(output_shape) == 3 else 1
+    output_block = Conv2D(filters=filters,
+                          kernel_size=1,
+                          strides=1,
+                          padding='same',
+                          activation='sigmoid',
+                          kernel_initializer='he_normal')(block10)
 
     lcu_net = tf.keras.Model(inputs=input_tensor, outputs=output_block)
-    lcu_net.compile(optimizer=keras.optimizers.Adam(learning_rate=1e-4), loss='binary_crossentropy', metrics=['accuracy'])
+    lcu_net.compile(optimizer=keras.optimizers.Adam(learning_rate=1e-4),
+                    loss='binary_crossentropy',
+                    # loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+                    metrics=['accuracy'])
 
     if debug:
-        model.summary()
+        lcu_net.summary()
+
+    tf.keras.utils.plot_model(lcu_net)
 
     print("Model successfully made!")
 
     return lcu_net
 
 
-model = LCU_Net(debug=False)
+if __name__ == "__main__":
+    model = LCU_Net(debug=True)
+
