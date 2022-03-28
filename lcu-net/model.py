@@ -5,6 +5,7 @@ os.add_dll_directory("C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.2/b
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.layers import *
+import tensorflow_addons as tfa
 
 
 def __apply_conv3x3(input_tensor, filter_size: int):
@@ -21,7 +22,7 @@ def __apply_conv3x3(input_tensor, filter_size: int):
                      padding='same',
                      activation='relu',
                      kernel_initializer='he_normal')(input_tensor)
-    # conv3x1 = BatchNormalization()(conv3x1)
+    conv3x1 = BatchNormalization()(conv3x1)
 
     conv1x3 = Conv2D(filters=filter_size,
                      kernel_size=(1, 3),
@@ -80,13 +81,14 @@ def __encoder_decoder_block(input_tensor, filter_size: int, encoder: bool, conca
     conv7 = __apply_conv3x3(conv5, filter_size)
 
     merged = Concatenate(axis=-1)([conv1, conv3, conv5, conv7])
+    # merged = BatchNormalization()(merged)
 
     block = merged
 
     if dropout > 0.0 and encoder:
         merged = Dropout(dropout)(merged)
     if maxpool and encoder:
-        merged = MaxPooling2D(pool_size=(2, 2))(merged)
+        merged = MaxPooling2D(pool_size=(2, 2), strides=(2, 2))(merged)
 
     down_sampled = merged
 
@@ -99,7 +101,7 @@ def __encoder_decoder_block(input_tensor, filter_size: int, encoder: bool, conca
 
 def LCU_Net(input_shape=(256, 256, 3), output_shape=(256, 256, 1), debug: bool = False):
 
-    dropout = 0.5
+    dropout = 0.0
 
     input_tensor = Input(input_shape)
     input_tensor = BatchNormalization()(input_tensor)
@@ -177,8 +179,10 @@ def LCU_Net(input_shape=(256, 256, 3), output_shape=(256, 256, 1), debug: bool =
                           activation='sigmoid',
                           kernel_initializer='he_normal')(block10)
 
+    # output_block = tfa.layers.CRF(4)(output_block)
+
     lcu_net = tf.keras.Model(inputs=input_tensor, outputs=output_block)
-    lcu_net.compile(optimizer=keras.optimizers.Adam(learning_rate=1e-4),
+    lcu_net.compile(optimizer=keras.optimizers.Adam(learning_rate=1.5e-4),
                     loss='binary_crossentropy',
                     # loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
                     metrics=['accuracy'])
