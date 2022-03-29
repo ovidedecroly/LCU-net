@@ -1,5 +1,11 @@
+#################################################
+# @Author Aditya Chakma
+# @Github https://github.com/Aitto
+#################################################
+
+# Added in case dlls are not found for GPU
 import os
-os.add_dll_directory("C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.2/bin")
+# os.add_dll_directory("C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.2/bin")
 
 
 import tensorflow as tf

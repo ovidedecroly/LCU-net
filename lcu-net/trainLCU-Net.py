@@ -1,3 +1,8 @@
+#################################################
+# @Author Aditya Chakma
+# @Github https://github.com/Aitto
+#################################################
+
 import os
 
 from keras.callbacks import ModelCheckpoint
