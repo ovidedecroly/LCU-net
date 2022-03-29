@@ -2,5 +2,8 @@
 unet/
 *.hdf5
 Data/
+.ipynb_checkpoints/
+__pycache__/
+
 !lcu_net-best-test.hdf5
 !lcu_net-best-train.hdf5
