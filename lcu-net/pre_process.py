@@ -16,6 +16,15 @@ __gt_dump = '../Data/gt'
 
 
 def __process_and_save(source_dir, dump_dir, file_name, extension, rgb=True):
+    """
+    Pre-process images from source directory and save images in the dump rirectory
+    :param source_dir: Source directory of the image
+    :param dump_dir: Dump directory to save the image
+    :param file_name: imaege file name to save
+    :param extension: image file extension. i.e. png, jpeg
+    :param rgb: Convert image to RGB. Default true. If rgb=False, image will be converted to Grayscale.
+    :return: None
+    """
     img = I.open(os.path.join(source_dir, file_name + '.' + extension))
     if rgb:
         img = img.convert("RGB")
@@ -51,6 +60,12 @@ def __augment(original_image_dir, aug_dump_dir, gt_source_dir, gt_dump_dir, num_
 
 
 def convert(arr, binarize=False):
+    """
+    Binarize image.
+    :param arr: np array of the image
+    :param binarize: If binarize=True, image levels will be converted to 0 or 1. default is False
+    :return: Binarized image.
+    """
     if binarize:
         arr[arr <= 128] = 0
         arr[arr > 128] = 1
@@ -64,6 +79,13 @@ def convert(arr, binarize=False):
 
 # noinspection PyPep8Naming
 def train_test_validation_split(img_dir, label_dir, limit=-1):
+    """
+    Split images in train, validation and test set
+    :param img_dir: Directory to original images
+    :param label_dir: Directory to Ground Truth images
+    :param limit: How many images to convert.
+    :return: numpy array of images. (trainX, trainY), (valX, valY), (testX, testY)
+    """
 
     X = []
     Y = []

@@ -40,6 +40,17 @@ block_num = 1
 
 def __encoder_decoder_block(input_tensor, filter_size: int, encoder: bool, concat_block=None, dropout=0.0,
                             maxpool: bool = True, debug: bool = False):
+    """
+    Creates encoder and decoder block
+    :param input_tensor: The input tensor
+    :param filter_size: Filter size to be used in Convolution layers
+    :param encoder: Boolean. Create encoder or decoder block
+    :param concat_block: Must pass if encoder=False. The block to concat with input tensor after transformation
+    :param dropout: Amount of dropout to use. Default is 0.0
+    :param maxpool: Boolean. Use MaxPooling layer or not. Default is troo.
+    :param debug: Boolean. Print debugging messages or not.
+    :return: output block, output block after using MaxPooling
+    """
 
     global block_num
 
@@ -100,6 +111,13 @@ def __encoder_decoder_block(input_tensor, filter_size: int, encoder: bool, conca
 
 
 def LCU_Net(input_shape=(256, 256, 3), output_shape=(256, 256, 1), debug: bool = False):
+    """
+    Create LCU-Net model
+    :param input_shape: shape of input image. Default shape is (256, 256, 3)
+    :param output_shape: output shape of the model. Default shape is (256, 256, 1)
+    :param debug: print debug messages or not. Default is False. Used for trial and error.
+    :return: returns the LCU-Net model. (Made with tensorflow)
+    """
 
     dropout = 0.0
 
