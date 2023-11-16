@@ -2,7 +2,7 @@
 
 @LinkedIn https://www.linkedin.com/in/aditya-chakma-55bb20199/
 
-# LCU-Net implementation
+# LCU-Net python implementation
 
 **This project implementation is part of MS project of CSE 6706 Advanced digital image processing at BUET.**
 
